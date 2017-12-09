@@ -3,7 +3,6 @@
 	Question2Answer by Gideon Greenspan and contributors
 	http://www.question2answer.org/
 
-	File: qa-include/qa-install.php
 	Description: User interface for installing, upgrading and fixing the database
 
 
@@ -35,8 +34,12 @@ qa_report_process_stage('init_install');
 if (!function_exists('qa_install_db_fail_handler')) {
 	/**
 	 * Handler function for database failures during the installation process
+	 * @param $type
+	 * @param int $errno
+	 * @param string $error
+	 * @param string $query
 	 */
-	function qa_install_db_fail_handler($type, $errno=null, $error=null, $query=null)
+	function qa_install_db_fail_handler($type, $errno = null, $error = null, $query = null)
 	{
 		global $pass_failure_from_install;
 
@@ -52,6 +55,11 @@ if (!function_exists('qa_install_db_fail_handler')) {
 	}
 }
 
+
+if (ob_get_level() > 0) {
+	// clears any current theme output to prevent broken design
+	ob_end_clean();
+}
 
 $success = '';
 $errorhtml = '';
@@ -93,7 +101,7 @@ if (!isset($pass_failure_type) && qa_clicked('super')) {
 }
 
 
-//	Output start of HTML early, so we can see a nicely-formatted list of database queries when upgrading
+// Output start of HTML early, so we can see a nicely-formatted list of database queries when upgrading
 
 ?><!DOCTYPE html>
 <html>
@@ -137,7 +145,6 @@ if (isset($pass_failure_type)) {
 }
 else {
 	// this page was requested by user GET/POST, so handle any incoming clicks on buttons
-	qa_db_connect('qa_install_db_fail_handler');
 
 	if (qa_clicked('create')) {
 		qa_db_install_tables();
@@ -152,6 +159,15 @@ else {
 
 				$success .= 'Your Question2Answer database has been created and integrated with your WordPress site.';
 
+			}
+			elseif (defined('QA_FINAL_JOOMLA_INTEGRATE_PATH')) {
+				require_once QA_INCLUDE_DIR.'db/admin.php';
+				require_once QA_INCLUDE_DIR.'app/format.php';
+				$jconfig = new JConfig();
+
+				// create link back to Joomla! home page (Joomla doesn't have a 'home' config setting we can use like WP does, so we'll just assume that the Joomla home is the parent of the Q2A site. If it isn't, the user can fix the link for themselves later)
+				qa_db_page_move(qa_db_page_create($jconfig->sitename, QA_PAGE_FLAGS_EXTERNAL, '../', null, null, null), 'O', 1);
+				$success .= 'Your Question2Answer database has been created and integrated with your Joomla! site.';
 			}
 			else {
 				$success .= 'Your Question2Answer database has been created for external user identity management. Please read the online documentation to complete integration.';
@@ -177,6 +193,7 @@ else {
 		$success .= 'The Question2Answer database tables have been repaired.';
 	}
 
+	qa_initialize_postdb_plugins();
 	if (qa_clicked('module')) {
 		$moduletype = qa_post_text('moduletype');
 		$modulename = qa_post_text('modulename');
@@ -211,6 +228,10 @@ if (qa_db_connection(false) !== null && !@$pass_failure_from_install) {
 			if (QA_FINAL_EXTERNAL_USERS) {
 				if (defined('QA_FINAL_WORDPRESS_INTEGRATE_PATH')) {
 					$errorhtml .= "\n\nWhen you click below, your Question2Answer site will be set up to integrate with the users of your WordPress site <a href=\"".qa_html(get_option('home'))."\" target=\"_blank\">".qa_html(get_option('blogname'))."</a>. Please consult the online documentation for more information.";
+				}
+				elseif (defined('QA_FINAL_JOOMLA_INTEGRATE_PATH')) {
+					$jconfig = new JConfig();
+					$errorhtml .= "\n\nWhen you click below, your Question2Answer site will be set up to integrate with the users of your Joomla! site <a href=\"../\" target=\"_blank\">".$jconfig->sitename."</a>. It's also recommended to install the Joomla QAIntegration plugin for additional user-access control. Please consult the online documentation for more information.";
 				}
 				else {
 					$errorhtml .= "\n\nWhen you click below, your Question2Answer site will be set up to integrate with your existing user database and management. Users will be referenced with database column type ".qa_html(qa_get_mysql_user_column_type()).". Please consult the online documentation for more information.";
@@ -316,7 +337,7 @@ if (strlen($suggest))
 	echo '<p>'.$suggest.'</p>';
 
 
-//	Very simple general form display logic (we don't use theme since it depends on tons of DB options)
+// Very simple general form display logic (we don't use theme since it depends on tons of DB options)
 
 if (count($fields)) {
 	echo '<table>';

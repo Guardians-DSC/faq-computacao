@@ -1,0 +1,24 @@
+version: '3'
+services:
+  web:
+    build: ./docker/php
+    image: my-php
+    container_name: "q2a-computacao"
+    restart: always
+    volumes:
+      - ./:/var/www/html/
+    ports:
+      - 8007:80
+
+  mysql:
+    image: mysql:latest
+    container_name: 'q2a-db'
+    restart: always
+    environment:
+      - MYSQL_DATABASE=q2a
+      - MYSQL_ROOT_PASSWORD=q2a4c3ss
+    volumes:
+      - q2a-datavolume:/var/lib/mysql
+
+volumes:
+  q2a-datavolume:
