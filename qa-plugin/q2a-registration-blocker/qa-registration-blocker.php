@@ -83,8 +83,8 @@
             $banned_ids = array_map( 'trim', $banned_ids );
             $email_domain = $this->get_domain_from_email( $email );
 
-            if (strpos($email, '@ccc.ufcg.edu.br') === false) {
-              return 'Apenas o domínio @ccc.ufcg.edu.br é permitido';
+            if (strpos($email, '@ccc.ufcg.edu.br') === false && strpos($email, '@computacao.ufcg.edu.br') === false ) {
+              return 'Apenas o domínio @ccc.ufcg.edu.br ou @computacao.ufcg.edu.br é permitido';
             }
 
             if ( in_array( $email_domain, $banned_ids ) )
